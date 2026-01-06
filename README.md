@@ -82,6 +82,53 @@ structure = converter.structure(human, Human)  # runs structure hooks and valida
 normal_data = converter.unstructure(structure)  # runs unstructure hooks, then makes a dict similar to `human` (or what you tell it to), no validators run.
 ```
 
+### Comparison
+in comparison with how django forms and DRF serializers work, see the examples below
+
+in django forms we do:
+```py
+form = MyForm(data)
+form.is_valid()
+clean_data = form.cleaned_data  
+```
+
+in drf we do:
+```py
+serializer = MySerializer(data)
+serializer.is_valid()
+clean_data = serializer.validated_data
+
+# to serialize data
+content = JSONRenderer().render(serializer.data)
+```
+
+the cattrs equivelent of forms is like this:
+```py
+try:
+    form = converter.structure(data, MyForm)
+except* ValueError:  # notice the `*`, this is an exception group (unless you configure cattrs otherwise)
+    pass
+clean_data = converter.unstructure(form)
+```
+
+or if working with json (or other formats)
+```py
+try:
+    form = converter.loads(data, MyForm)  # take a json data and load it to python
+except* ValueError:  # notice the `*`, this is an exception group (unless you configure cattrs otherwise)
+    pass
+clean_data = converter.unstructure(form)
+
+# to serialize data
+data = converter.structure(clean_data, MyForm)  # to dump data, structure it first
+content = converter.dumps(data)
+```
+
+structuring and loading also validates the data, so no need for the extra step.
+
+note that `converter.structure` raises `ValueError` as an exception group.
+
+
 ### serializers
 the basic converter you saw in basic usage section can only structure and unstructure, which is powerful, but we can do more
 `cattrs` comes with a set of [preconfigured converters](https://catt.rs/en/stable/preconf.html).
