@@ -1,8 +1,13 @@
 import math
+from decimal import Decimal, DecimalException
+from typing import get_args
 
+from django.core import validators
+from django.core.exceptions import ValidationError
 from django.utils.regex_helper import _lazy_re_compile
 
 from django_cattrs_fields.fields import (
+    DecimalField,
     FloatField,
     IntegerField,
 )
@@ -37,6 +42,39 @@ def integer_unstructure(val: IntegerField | None) -> int | None:
         raise ValueError from e
 
     return v
+
+
+# Decimal hooks
+
+
+def decimal_structure(val, type) -> DecimalField:
+    forbid_falsy_values_validator(val)
+    print(type)
+    print(get_args(type))
+    max_digits = get_args(type)[1].max_digits
+    decimal_places = get_args(type)[1].decimal_places
+
+    try:
+        value = Decimal(val)
+    except DecimalException:
+        raise ValueError("Enter a number.")
+
+    try:
+        validators.DecimalValidator(max_digits=max_digits, decimal_places=decimal_places)(value)
+    except ValidationError as e:
+        raise ValueError(e.message)
+
+    return value
+
+
+def decimal_structure_nullable(val, type) -> DecimalField | None:
+    if val is None:
+        return None
+    return decimal_structure(val, type)
+
+
+def decimal_unstructure(val: DecimalField) -> Decimal:
+    return Decimal(val)
 
 
 # Float hooks
