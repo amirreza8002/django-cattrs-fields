@@ -10,6 +10,7 @@ this project is the first step of many, it is intendened to be minimal, only add
 ### current data types
 * BooleanField
 * CharField
+* DecimalField
 * EmailField
 * SlugField
 * URLField
@@ -46,6 +47,7 @@ from django-cattrs-fields.converters import converter
 from django_cattrs_fields.fields import (
   BooleanField, 
   CharField, 
+  DecimalField,
   EmailField, 
   SlugField, 
   URLField, 
@@ -68,7 +70,8 @@ class Human:
     salary: FloatField
     birth_date: DateField
     signup_date: DateTimeField
-    picture: FileFIeld
+    picture: FileField
+    accurate_salary: DecimalField
 
 
 human = {
@@ -80,8 +83,9 @@ human = {
     "age": 25,
     "salary": 1000.43,
     "birth_date": date(year=2000, month=7, day=3),
-    "signup_date": datetime.now()
-    "picture": SimpleUploadedFile(name="test_image.jpeg", content=b"wheeee", content_type="image/jpeg")
+    "signup_date": datetime.now(),
+    "picture": SimpleUploadedFile(name="test_image.jpeg", content=b"wheeee", content_type="image/jpeg"),
+    "accurate_salary": DecimalField("1000.43")
 }
 
 structure = converter.structure(human, Human)  # runs structure hooks and validators, then creates an instance of `Human`
@@ -181,6 +185,7 @@ class Human:
     salary: FloatField
     birth_date: DateField
     signup_date: DateTimeField
+    accurate_salary: DecimalField
 
 
 def get_data(request):
@@ -240,6 +245,26 @@ class Product:
 ```
 for more advanced use check [default docs](https://www.attrs.org/en/stable/examples.html#defaults)
 
+### field params
+some fields like `DecimalField` can take some parameter about their data using `typing.Annotated`.
+
+```py
+from typing import Annotated
+
+from attrs import define
+
+from django_cattrs_fields.fields import DecimalField, CharField, Params
+
+@define
+class Product:
+  name: CharField
+  discount: Annotated[DecimalField, Params(decimal_max_digits=5, decimal_places=3)]
+```
+
+the use case of params differs depending on the field, in the case of Decimal field, `decimal_max_digits` as equivalent to django's DecimalField's `max_digits` parameter
+and `decimal_places` is equivalent to `decimal_places` parameter, and are used when structuring the data to validate the decimal value.
+
+like django, DecimalField's params are optional, some fields may require some params in the future.
 
 ### validation
 be default this package runs some validation when you are structuring your data
